@@ -7,11 +7,14 @@ import org.junit.Before;
 import org.junit.Test;
 import ru.praktikum.sprint_7.clients.CourierClient;
 import ru.praktikum.sprint_7.clients.LoginClient;
+import ru.praktikum.sprint_7.models.Courier;
 
-import static org.hamcrest.Matchers.equalTo;
+import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.equalTo;
 
 public class LoginApiTest {
+
     private CourierClient courierClient;
     private LoginClient loginClient;
     private String login;
@@ -23,11 +26,10 @@ public class LoginApiTest {
         loginClient = new LoginClient();
         login = "courier_" + System.currentTimeMillis();
 
-        String body = String.format(
-                "{\"login\":\"%s\",\"password\":\"123456\",\"firstName\":\"Name\"}",
-                login
-        );
-        courierClient.createCourier(body).then().statusCode(201);
+        Courier courier = new Courier(login, "123456", "Name");
+        courierClient.createCourier(courier)
+                .then()
+                .statusCode(SC_CREATED);
     }
 
     @After
@@ -40,48 +42,47 @@ public class LoginApiTest {
     @Test
     @Description("Курьер может авторизоваться")
     public void shouldLoginSuccessfully() {
-        String body = String.format(
-                "{\"login\":\"%s\",\"password\":\"123456\"}",
-                login
-        );
-        Response response = loginClient.loginCourier(body);
+        Courier credentials = new Courier(login, "123456");
+
+        Response response = loginClient.loginCourier(credentials);
+
         courierId = response.jsonPath().getInt("id");
 
         response.then()
-                .statusCode(200)
+                .statusCode(SC_OK)
                 .body("id", notNullValue());
     }
 
     @Test
     @Description("Для авторизации нужны все поля")
     public void shouldReturnErrorIfLoginFieldMissing() {
-        String body = "{\"password\":\"123456\"}";
-        loginClient.loginCourier(body)
+        Courier credentials = new Courier(null, "123456");
+
+        loginClient.loginCourier(credentials)
                 .then()
-                .statusCode(400)
+                .statusCode(SC_BAD_REQUEST)
                 .body("message", equalTo("Недостаточно данных для входа"));
     }
 
     @Test
-    @Description("Неверный пароль — ошибка 404")
-    public void shouldReturn404IfWrongPassword() {
-        String body = String.format(
-                "{\"login\":\"%s\",\"password\":\"wrongpass\"}",
-                login
-        );
-        loginClient.loginCourier(body)
+    @Description("Неверный пароль — ошибка")
+    public void shouldReturnErrorIfWrongPassword() {
+        Courier credentials = new Courier(login, "wrongpass");
+
+        loginClient.loginCourier(credentials)
                 .then()
-                .statusCode(404)
+                .statusCode(SC_NOT_FOUND)
                 .body("message", equalTo("Учетная запись не найдена"));
     }
 
     @Test
-    @Description("Несуществующий логин — ошибка 404")
-    public void shouldReturn404IfLoginNotFound() {
-        String body = "{\"login\":\"nonexistent_login_999\",\"password\":\"123456\"}";
-        loginClient.loginCourier(body)
+    @Description("Несуществующий логин — ошибка")
+    public void shouldReturnErrorIfLoginNotFound() {
+        Courier credentials = new Courier("nonexistent_login_999", "123456");
+
+        loginClient.loginCourier(credentials)
                 .then()
-                .statusCode(404)
+                .statusCode(SC_NOT_FOUND)
                 .body("message", equalTo("Учетная запись не найдена"));
     }
 }

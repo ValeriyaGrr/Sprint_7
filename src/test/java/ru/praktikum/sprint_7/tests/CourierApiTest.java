@@ -5,90 +5,76 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import ru.praktikum.sprint_7.clients.CourierClient;
+import ru.praktikum.sprint_7.models.Courier;
 
+import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.Matchers.equalTo;
 
 public class CourierApiTest {
-    private CourierClient client;
+
+    private CourierClient courierClient;
     private String login;
     private int courierId;
 
     @Before
     public void setUp() {
-        client = new CourierClient();
+        courierClient = new CourierClient();
         login = "courier_" + System.currentTimeMillis();
     }
 
     @After
     public void tearDown() {
         if (courierId != 0) {
-            client.deleteCourier(courierId);
+            courierClient.deleteCourier(courierId);
         }
     }
 
     @Test
     @Description("Курьера можно создать")
     public void shouldCreateCourierSuccessfully() {
-        String body = String.format(
-                "{\"login\":\"%s\",\"password\":\"123456\",\"firstName\":\"Name\"}",
-                login
-        );
-        client.createCourier(body)
+        Courier courier = new Courier(login, "123456", "Name");
+
+        courierClient.createCourier(courier)
                 .then()
-                .statusCode(201)
+                .statusCode(SC_CREATED)
                 .body("ok", equalTo(true));
     }
 
     @Test
     @Description("Нельзя создать курьера без логина")
     public void shouldReturnErrorIfLoginMissing() {
-        String body = "{\"password\":\"123456\",\"firstName\":\"Name\"}";
-        client.createCourier(body)
+        Courier courier = new Courier(null, "123456", "Name");
+
+        courierClient.createCourier(courier)
                 .then()
-                .statusCode(400)
+                .statusCode(SC_BAD_REQUEST)
                 .body("message", equalTo("Недостаточно данных для создания учетной записи"));
     }
 
     @Test
     @Description("Нельзя создать курьера без пароля")
     public void shouldReturnErrorIfPasswordMissing() {
-        String body = String.format("{\"login\":\"%s\",\"firstName\":\"Name\"}", login);
-        client.createCourier(body)
+        Courier courier = new Courier(login, null, "Name");
+
+        courierClient.createCourier(courier)
                 .then()
-                .statusCode(400)
+                .statusCode(SC_BAD_REQUEST)
                 .body("message", equalTo("Недостаточно данных для создания учетной записи"));
     }
 
     @Test
-    @Description("Нельзя создать двух одинаковых курьеров")
+    @Description("Нельзя создать двух курьеров с одинаковым логином")
     public void shouldReturnConflictIfDuplicateLogin() {
+        Courier firstCourier = new Courier(login, "123456", "Name");
+        Courier duplicateCourier = new Courier(login, "654321", "Other");
 
-        String body1 = String.format(
-                "{\"login\":\"%s\",\"password\":\"123456\",\"firstName\":\"Name\"}",
-                login
-        );
-        client.createCourier(body1).then().statusCode(201);
-
-        String body2 = String.format(
-                "{\"login\":\"%s\",\"password\":\"654321\",\"firstName\":\"Other\"}",
-                login
-        );
-        client.createCourier(body2)
+        courierClient.createCourier(firstCourier)
                 .then()
-                .statusCode(409)
+                .statusCode(SC_CREATED);
+
+        courierClient.createCourier(duplicateCourier)
+                .then()
+                .statusCode(SC_CONFLICT)
                 .body("message", equalTo("Этот логин уже используется. Попробуйте другой."));
-    }
-
-    @Test
-    @Description("Успешный запрос возвращает {ok: true}")
-    public void shouldReturnOkTrueOnSuccess() {
-        String body = String.format(
-                "{\"login\":\"%s\",\"password\":\"123456\",\"firstName\":\"Name\"}",
-                login
-        );
-        client.createCourier(body)
-                .then()
-                .statusCode(201)
-                .body("ok", equalTo(true));
     }
 }

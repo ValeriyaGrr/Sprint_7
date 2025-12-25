@@ -1,26 +1,26 @@
 package ru.praktikum.sprint_7.clients;
 
-import io.restassured.RestAssured;
+import io.qameta.allure.Step;
 import io.restassured.response.Response;
+import ru.praktikum.sprint_7.models.Order;
 
 import static io.restassured.RestAssured.given;
 
-public class OrderClient {
-    static {
-        RestAssured.baseURI = "https://qa-scooter.praktikum-services.ru";
-    }
+public class OrderClient extends BaseClient {
 
-    public Response createOrder(String body) {
+    private static final String ORDERS_PATH = "/api/v1/orders";
+
+    @Step("Создание заказа")
+    public Response createOrder(Order order) {
         return given()
                 .header("Content-Type", "application/json")
-                .body(body)
-                .when()
-                .post("/api/v1/orders");
+                .body(order)
+                .post(ORDERS_PATH);
     }
 
+    @Step("Получение списка заказов")
     public Response getOrdersList() {
         return given()
-                .when()
-                .get("/api/v1/orders");
+                .get(ORDERS_PATH);
     }
 }

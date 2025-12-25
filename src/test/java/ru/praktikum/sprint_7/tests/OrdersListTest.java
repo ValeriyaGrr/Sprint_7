@@ -4,8 +4,8 @@ import io.qameta.allure.Description;
 import org.junit.Test;
 import ru.praktikum.sprint_7.clients.OrderClient;
 
-import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.apache.http.HttpStatus.*;
+import static org.hamcrest.Matchers.*;
 
 public class OrdersListTest {
 
@@ -14,7 +14,7 @@ public class OrdersListTest {
     public void shouldReturnOrdersList() {
         new OrderClient().getOrdersList()
                 .then()
-                .statusCode(200)
+                .statusCode(SC_OK)
                 .body("orders", notNullValue())
                 .body("orders", instanceOf(java.util.ArrayList.class));
     }
