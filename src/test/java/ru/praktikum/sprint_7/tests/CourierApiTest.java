@@ -5,20 +5,24 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import ru.praktikum.sprint_7.clients.CourierClient;
+import ru.praktikum.sprint_7.clients.LoginClient;
 import ru.praktikum.sprint_7.models.Courier;
 
 import static org.apache.http.HttpStatus.*;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 public class CourierApiTest {
 
     private CourierClient courierClient;
+    private LoginClient loginClient;
     private String login;
     private int courierId;
 
     @Before
     public void setUp() {
         courierClient = new CourierClient();
+        loginClient = new LoginClient();
         login = "courier_" + System.currentTimeMillis();
     }
 
@@ -38,6 +42,13 @@ public class CourierApiTest {
                 .then()
                 .statusCode(SC_CREATED)
                 .body("ok", equalTo(true));
+
+        courierId = loginClient.loginCourier(courier)
+                .then()
+                .statusCode(SC_OK)
+                .body("id", notNullValue())
+                .extract()
+                .path("id");
     }
 
     @Test

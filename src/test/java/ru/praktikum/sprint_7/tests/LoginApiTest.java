@@ -10,8 +10,8 @@ import ru.praktikum.sprint_7.clients.LoginClient;
 import ru.praktikum.sprint_7.models.Courier;
 
 import static org.apache.http.HttpStatus.*;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 public class LoginApiTest {
 
@@ -30,6 +30,11 @@ public class LoginApiTest {
         courierClient.createCourier(courier)
                 .then()
                 .statusCode(SC_CREATED);
+
+        Courier credentials = new Courier(login, "123456");
+        Response loginResponse = loginClient.loginCourier(credentials);
+
+        courierId = loginResponse.jsonPath().getInt("id");
     }
 
     @After
@@ -44,11 +49,8 @@ public class LoginApiTest {
     public void shouldLoginSuccessfully() {
         Courier credentials = new Courier(login, "123456");
 
-        Response response = loginClient.loginCourier(credentials);
-
-        courierId = response.jsonPath().getInt("id");
-
-        response.then()
+        loginClient.loginCourier(credentials)
+                .then()
                 .statusCode(SC_OK)
                 .body("id", notNullValue());
     }
